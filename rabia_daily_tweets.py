@@ -81,6 +81,7 @@ Hashtags: Use 1–2 relevant hashtags (e.g., #Tantra, #Awakening, #DivineFeminin
 
 Final Objective:
 Craft a tweet that feels alive, fierce, and deeply personal—encouraging Rabia’s audience to engage and explore their own power.
+Important: Do not mention or imply shrinking, minimizing, or reducing yourself. Focus on themes of empowerment, expansion, and owning your space.
 """
     user_message = "Now, generate today’s tweet following this structure."
     
