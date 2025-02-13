@@ -1,6 +1,7 @@
 name: Post Rabia Tweets
 
 on:
+  workflow dispatch:
   schedule:
     # Daily at 12:00 UTC = 7:00 AM ET (Morning Inspiration)
     - cron: '0 12 * * *'
