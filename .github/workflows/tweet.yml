@@ -1,0 +1,40 @@
+name: Post Rabia Tweets
+
+on:
+  schedule:
+    # Daily at 12:00 UTC = 7:00 AM ET (Morning Inspiration)
+    - cron: '0 12 * * *'
+    # Daily at 16:00 UTC = 11:00 AM ET (Late Morning/Midday)
+    - cron: '0 16 * * *'
+    # Daily at 20:00 UTC = 3:00 PM ET (Afternoon)
+    - cron: '0 20 * * *'
+    # Daily at 0:00 UTC = 7:00 PM ET (Evening Engagement)
+    - cron: '0 0 * * *'
+
+jobs:
+  tweet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests requests-oauthlib openai python-dotenv pytz
+
+      - name: Run tweet bot
+        env:
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+          OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
+          OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python rabia_daily_tweets.py
