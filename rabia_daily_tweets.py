@@ -10,7 +10,7 @@ openai.api_key = OPENAI_API_KEY
 
 
 # Load environment variables from the .env file
-load_dotenv()
+load_dotenv*()
 
 # Twitter API credentials (OAuth 1.0a for posting tweets)
 TWITTER_API_KEY = os.getenv("TWITTER_API_KEY")
