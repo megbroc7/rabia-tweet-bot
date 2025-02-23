@@ -3,7 +3,9 @@ import requests
 import datetime
 import pytz
 from requests_oauthlib import OAuth1Session
-import openai
+from openai import OpenAI
+
+client = OpenAI(api_key=OPENAI_API_KEY)
 from dotenv import load_dotenv
 
 # Load environment variables from the .env file
@@ -21,7 +23,6 @@ if not OPENAI_API_KEY:
     raise Exception("OPENAI_API_KEY is not set in your environment.")
 
 # Set the API key for OpenAI
-openai.api_key = OPENAI_API_KEY
 
 # Initialize the OpenAI client (if you prefer using an instantiated client, otherwise use openai.* functions directly)
 # For this example, we'll just use the module directly.
@@ -97,16 +98,14 @@ Craft a tweet that feels alive, fierce, and deeply personal—encouraging Rabia�
 Important: Do not mention or imply shrinking, minimizing, or reducing yourself. Focus on themes of empowerment, expansion, and owning your space.
 """
     user_message = "Now, generate today’s tweet following this structure."
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_message}
-        ],
-        max_tokens=60,
-        temperature=0.7,
-        top_p=1,
-    )
+    response = client.chat.completions.create(model="gpt-4",
+    messages=[
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ],
+    max_tokens=60,
+    temperature=0.7,
+    top_p=1)
     tweet_text = response.choices[0].message.content.strip()
     tweet_text = clean_tweet(tweet_text)
     return tweet_text
@@ -134,16 +133,14 @@ def generate_dynamic_image_prompt(tweet_text):
         "If no clear visual theme emerges, simply output: 'An tantric, mystical depiction of goddess energy in vibrant tones'."
     )
     user_message = f"Tweet: {tweet_text}"
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_message}
-        ],
-        max_tokens=40,
-        temperature=0.7,
-        top_p=1,
-    )
+    response = client.chat.completions.create(model="gpt-3.5-turbo",
+    messages=[
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ],
+    max_tokens=40,
+    temperature=0.7,
+    top_p=1)
     image_prompt = response.choices[0].message.content.strip()
     # Use fallback if prompt is empty or too short
     if not image_prompt or len(image_prompt) < 10:
@@ -151,12 +148,10 @@ def generate_dynamic_image_prompt(tweet_text):
     return image_prompt
 
 def generate_image(prompt):
-    response = openai.Image.create(
-        prompt=prompt,
-        n=1,
-        size="512x512"
-    )
-    image_url = response["data"][0]["url"]
+    response = client.images.generate(prompt=prompt,
+    n=1,
+    size="512x512")
+    image_url = response.data[0].url
     image_data = requests.get(image_url).content
     return image_data
 
@@ -165,7 +160,7 @@ def upload_image_to_twitter(twitter_session, image_data):
     files = {"media": image_data}
     response = twitter_session.post(url, files=files)
     if response.status_code == 200:
-        return response.json()["media_id_string"]
+        return response.json().media_id_string
     else:
         print("Error uploading image:", response.status_code, response.text)
         return None
@@ -192,7 +187,7 @@ def update_image_post_date():
 def post_tweet():
     tweet_text = generate_valid_tweet()
     url = "https://api.twitter.com/2/tweets"
-    
+
     twitter = OAuth1Session(
         client_key=TWITTER_API_KEY,
         client_secret=TWITTER_API_SECRET,
