@@ -5,6 +5,9 @@ import pytz
 from requests_oauthlib import OAuth1Session
 from openai import OpenAI
 from dotenv import load_dotenv
+import openai
+openai.api_key = OPENAI_API_KEY
+
 
 # Load environment variables from the .env file
 load_dotenv()
