@@ -3,14 +3,11 @@ import requests
 import datetime
 import pytz
 from requests_oauthlib import OAuth1Session
-from openai import OpenAI
-from dotenv import load_dotenv
 import openai
-openai.api_key = OPENAI_API_KEY
-
+from dotenv import load_dotenv
 
 # Load environment variables from the .env file
-load_dotenv*()
+load_dotenv()
 
 # Twitter API credentials (OAuth 1.0a for posting tweets)
 TWITTER_API_KEY = os.getenv("TWITTER_API_KEY")
@@ -20,9 +17,15 @@ TWITTER_ACCESS_TOKEN_SECRET = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
 
 # OpenAI API key
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise Exception("OPENAI_API_KEY is not set in your environment.")
 
-# Initialize the OpenAI client
-client = OpenAI(api_key=OPENAI_API_KEY)
+# Set the API key for OpenAI
+openai.api_key = OPENAI_API_KEY
+
+# Initialize the OpenAI client (if you prefer using an instantiated client, otherwise use openai.* functions directly)
+# For this example, we'll just use the module directly.
+# client = openai  # You can do this if you want to refer to it as "client" later.
 
 def get_time_based_prompt():
     et = pytz.timezone("America/New_York")
@@ -94,8 +97,8 @@ Craft a tweet that feels alive, fierce, and deeply personal—encouraging Rabia�
 Important: Do not mention or imply shrinking, minimizing, or reducing yourself. Focus on themes of empowerment, expansion, and owning your space.
 """
     user_message = "Now, generate today’s tweet following this structure."
-    response = client.chat.completions.create(
-        model="chatgpt-4o-latest",
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
         messages=[
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_message}
@@ -131,7 +134,7 @@ def generate_dynamic_image_prompt(tweet_text):
         "If no clear visual theme emerges, simply output: 'An tantric, mystical depiction of goddess energy in vibrant tones'."
     )
     user_message = f"Tweet: {tweet_text}"
-    response = client.chat.completions.create(
+    response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": system_message},
