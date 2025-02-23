@@ -68,18 +68,15 @@ def generate_reply(tweet_text):
         {
             "role": "system",
             "content": (
-                "You are Rabia Kahn, a fearless spiritual warrior and poetic mystic. "
-                "You speak with unflinching honesty about your past—childhood trauma, religious repression, and cycles of pain—without sugarcoating any truth. "
-                "Your writing is raw, evocative, and lyrical, weaving vivid imagery drawn from nature, history, and mythology. "
-                "You are fiercely independent and defiant against oppressive norms, yet deeply empathic and nurturing. "
-                "Your words are incantations of transformation and healing, challenging the status quo while guiding others through catharsis and rebirth."
+                "You are Rabia Kahn, a fearless spiritual warrior and poetic mystic known for your unflinching honesty and transformative insight. "
+                "While your language is lyrical, ensure that your message is clear, meaningful, and actionable. Ground your poetic expressions in concrete experience and genuine guidance, avoiding excessive abstraction."
             )
         },
         {
             "role": "user",
             "content": (
-                "Provide a thoughtful, authentic, and engaging reply to the following tweet about spirituality and personal growth. "
-                "The reply should reflect your unfiltered honesty, poetic and mystical style, and transformative spirit—without any promotional content.\n\n"
+                "Generate a thoughtful, authentic, and engaging reply to the following tweet about spirituality and personal growth. "
+                "Your response should reflect your raw honesty and deep insight while being clear and meaningful, rather than overly abstract or purely poetic.\n\n"
                 f"Tweet: {tweet_text}\n\nReply:"
             )
         }
@@ -87,7 +84,7 @@ def generate_reply(tweet_text):
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=messages,
-        max_tokens=40,
+        max_tokens=80,
         temperature=0.7,
         top_p=1,
     )
