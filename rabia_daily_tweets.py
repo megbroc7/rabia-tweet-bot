@@ -3,30 +3,25 @@ import requests
 import datetime
 import pytz
 from requests_oauthlib import OAuth1Session
-from openai import OpenAI
-
-client = OpenAI(api_key=OPENAI_API_KEY)
 from dotenv import load_dotenv
 
-# Load environment variables from the .env file
+# Load environment variables from the .env file (for local development)
 load_dotenv()
 
-# Twitter API credentials (OAuth 1.0a for posting tweets)
+# Retrieve environment variables
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise Exception("OPENAI_API_KEY is not set in your environment.")
+
 TWITTER_API_KEY = os.getenv("TWITTER_API_KEY")
 TWITTER_API_SECRET = os.getenv("TWITTER_API_SECRET")
 TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")
 TWITTER_ACCESS_TOKEN_SECRET = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
 
-# OpenAI API key
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise Exception("OPENAI_API_KEY is not set in your environment.")
-
-# Set the API key for OpenAI
-
-# Initialize the OpenAI client (if you prefer using an instantiated client, otherwise use openai.* functions directly)
-# For this example, we'll just use the module directly.
-# client = openai  # You can do this if you want to refer to it as "client" later.
+# Import and instantiate the OpenAI client using the new API interface.
+from openai import OpenAI
+import openai
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 def get_time_based_prompt():
     et = pytz.timezone("America/New_York")
@@ -98,14 +93,16 @@ Craft a tweet that feels alive, fierce, and deeply personal—encouraging Rabia�
 Important: Do not mention or imply shrinking, minimizing, or reducing yourself. Focus on themes of empowerment, expansion, and owning your space.
 """
     user_message = "Now, generate today’s tweet following this structure."
-    response = client.chat.completions.create(model="gpt-4",
-    messages=[
-        {"role": "system", "content": system_message},
-        {"role": "user", "content": user_message}
-    ],
-    max_tokens=60,
-    temperature=0.7,
-    top_p=1)
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": user_message}
+        ],
+        max_tokens=60,
+        temperature=0.7,
+        top_p=1,
+    )
     tweet_text = response.choices[0].message.content.strip()
     tweet_text = clean_tweet(tweet_text)
     return tweet_text
@@ -123,34 +120,33 @@ def generate_valid_tweet(max_attempts=5):
     return tweet
 
 def generate_dynamic_image_prompt(tweet_text):
-    """
-    Generate a dynamic image prompt based on the tweet content.
-    Fallback to a default prompt if the dynamic result is unsatisfactory.
-    """
     system_message = (
         "You are an expert creative writer specializing in visual art descriptions. "
         "Based on the following tweet content, generate a vivid and concise image prompt that captures the spirit and theme of the tweet. "
         "If no clear visual theme emerges, simply output: 'An tantric, mystical depiction of goddess energy in vibrant tones'."
     )
     user_message = f"Tweet: {tweet_text}"
-    response = client.chat.completions.create(model="gpt-3.5-turbo",
-    messages=[
-        {"role": "system", "content": system_message},
-        {"role": "user", "content": user_message}
-    ],
-    max_tokens=40,
-    temperature=0.7,
-    top_p=1)
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": user_message}
+        ],
+        max_tokens=40,
+        temperature=0.7,
+        top_p=1,
+    )
     image_prompt = response.choices[0].message.content.strip()
-    # Use fallback if prompt is empty or too short
     if not image_prompt or len(image_prompt) < 10:
         image_prompt = "An tantric, mystical depiction of goddess energy in vibrant tones"
     return image_prompt
 
 def generate_image(prompt):
-    response = client.images.generate(prompt=prompt,
-    n=1,
-    size="512x512")
+    response = client.images.generate(
+        prompt=prompt,
+        n=1,
+        size="512x512"
+    )
     image_url = response.data[0].url
     image_data = requests.get(image_url).content
     return image_data
@@ -160,7 +156,7 @@ def upload_image_to_twitter(twitter_session, image_data):
     files = {"media": image_data}
     response = twitter_session.post(url, files=files)
     if response.status_code == 200:
-        return response.json().media_id_string
+        return response.json()["media_id_string"]
     else:
         print("Error uploading image:", response.status_code, response.text)
         return None
@@ -171,10 +167,7 @@ def should_include_image():
     try:
         with open("last_image_date.txt", "r") as f:
             last_date = f.read().strip()
-        if last_date == today_str:
-            return False
-        else:
-            return True
+        return last_date != today_str
     except FileNotFoundError:
         return True
 
@@ -187,7 +180,7 @@ def update_image_post_date():
 def post_tweet():
     tweet_text = generate_valid_tweet()
     url = "https://api.twitter.com/2/tweets"
-
+    
     twitter = OAuth1Session(
         client_key=TWITTER_API_KEY,
         client_secret=TWITTER_API_SECRET,
@@ -196,7 +189,6 @@ def post_tweet():
     )
 
     if should_include_image():
-        # Generate a dynamic image prompt based on tweet content.
         image_prompt = generate_dynamic_image_prompt(tweet_text)
         print("Using image prompt:", image_prompt)
         image_data = generate_image(image_prompt)
@@ -215,7 +207,6 @@ def post_tweet():
             else:
                 print("Error posting tweet with image:", response.status_code, response.text)
         else:
-            # Fallback: post text-only if image upload fails.
             payload = {"text": tweet_text}
             response = twitter.post(url, json=payload)
             if response.status_code in [200, 201]:
@@ -223,7 +214,6 @@ def post_tweet():
             else:
                 print("Error posting tweet:", response.status_code, response.text)
     else:
-        # Post text-only if an image has already been posted today.
         payload = {"text": tweet_text}
         response = twitter.post(url, json=payload)
         if response.status_code in [200, 201]:
