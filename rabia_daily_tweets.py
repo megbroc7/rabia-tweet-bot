@@ -145,7 +145,7 @@ def generate_dynamic_image_prompt(tweet_text):
     return image_prompt
 
 def generate_image(prompt):
-    response = client.images.create(
+    response = openai.Image.create(
         prompt=prompt,
         n=1,
         size="512x512"
