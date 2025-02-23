@@ -1,16 +1,22 @@
 name: Engagement Bot
 
 on:
-  # Scheduled triggers (times are in UTC)
   schedule:
-    - cron: '0 14 * * *'  # 9:00 AM Eastern Standard Time (14:00 UTC)
-    - cron: '0 2 * * *'   # 9:00 PM Eastern Standard Time (02:00 UTC)
-  # Manual trigger
+    - cron: '0 14 * * *'  # 9:00 AM ET (14:00 UTC)
+    - cron: '0 2 * * *'   # 9:00 PM ET (02:00 UTC)
   workflow_dispatch:
 
 jobs:
   run-engagement-bot:
     runs-on: ubuntu-latest
+    env:
+      TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+      TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+      TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+      TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+      OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
+      OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
