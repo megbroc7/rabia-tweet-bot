@@ -19,6 +19,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Download last_image_date artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: last_image_date
+          path: .
+        # This step will attempt to download the file if it exists; if not, it won’t fail.
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -39,3 +46,10 @@ jobs:
           OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python rabia_daily_tweets.py
+
+      - name: Upload last_image_date artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: last_image_date
+          path: last_image_date.txt
