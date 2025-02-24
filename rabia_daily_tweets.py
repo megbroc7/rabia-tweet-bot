@@ -2,6 +2,7 @@ import os
 import requests
 import datetime
 import pytz
+import time
 from requests_oauthlib import OAuth1Session
 from dotenv import load_dotenv
 
@@ -123,23 +124,27 @@ def generate_dynamic_image_prompt(tweet_text):
     system_message = (
         "You are an expert creative writer specializing in visual art descriptions. "
         "Based on the following tweet content, generate a vivid and concise image prompt that captures the spirit and theme of the tweet. "
-        "If no clear visual theme emerges, simply output: 'An tantric, mystical depiction of goddess energy in vibrant tones'."
+        "If no clear visual theme emerges, simply output: 'A tantric, mystical depiction of goddess energy in vibrant tones'."
     )
     user_message = f"Tweet: {tweet_text}"
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_message}
-        ],
-        max_tokens=40,
-        temperature=0.7,
-        top_p=1,
-    )
-    image_prompt = response.choices[0].message.content.strip()
-    if not image_prompt or len(image_prompt) < 10:
-        image_prompt = "An tantric, mystical depiction of goddess energy in vibrant tones"
-    return image_prompt
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
+            ],
+            max_tokens=40,
+            temperature=0.7,
+            top_p=1,
+        )
+        image_prompt = response.choices[0].message.content.strip()
+        if not image_prompt or len(image_prompt) < 10:
+            image_prompt = "A tantric, mystical depiction of goddess energy in vibrant tones"
+        return image_prompt
+    except Exception as e:
+        print(f"Error generating image prompt: {e}")
+        return "A tantric, mystical depiction of goddess energy in vibrant tones"
 
 def generate_image(prompt):
     response = client.images.generate(
@@ -178,7 +183,15 @@ def update_image_post_date():
         f.write(today_str)
 
 def post_tweet():
-    tweet_text = generate_valid_tweet()
+    # Try generating a tweet; if it fails, use the fallback.
+    try:
+        tweet_text = generate_valid_tweet()
+        if not tweet_text.strip():
+            raise ValueError("Empty tweet generated")
+    except Exception as e:
+        print("Error generating tweet, falling back to default:", e)
+        tweet_text = "Let us know what you think in the comments! https://www.youtube.com/@VoiceofPossibility"
+    
     url = "https://api.twitter.com/2/tweets"
     
     twitter = OAuth1Session(
@@ -196,17 +209,35 @@ def post_tweet():
         if media_id:
             payload = {
                 "text": tweet_text,
-                "media": {
-                    "media_ids": [media_id]
-                }
+                "media": {"media_ids": [media_id]}
             }
-            response = twitter.post(url, json=payload)
-            if response.status_code in [200, 201]:
-                print("Tweet with image posted successfully:", tweet_text)
-                update_image_post_date()
+            # Attempt to post with image using exponential backoff
+            max_retries = 3
+            delay = 10  # initial delay in seconds
+            for attempt in range(max_retries):
+                response = twitter.post(url, json=payload)
+                if response.status_code in [200, 201]:
+                    print("Tweet with image posted successfully:", tweet_text)
+                    update_image_post_date()
+                    break
+                elif response.status_code == 429:
+                    print(f"429 rate limit for image tweet. Attempt {attempt+1}/{max_retries}. Retrying in {delay} seconds...")
+                    time.sleep(delay)
+                    delay *= 2
+                else:
+                    print("Error posting tweet with image:", response.status_code, response.text)
+                    break
             else:
-                print("Error posting tweet with image:", response.status_code, response.text)
+                # Fallback to text-only if all retries fail
+                print("Retries failed for tweet with image. Posting text-only tweet.")
+                payload = {"text": tweet_text}
+                response = twitter.post(url, json=payload)
+                if response.status_code in [200, 201]:
+                    print("Text-only tweet posted successfully:", tweet_text)
+                else:
+                    print("Error posting text-only tweet:", response.status_code, response.text)
         else:
+            # Fallback: post text-only if image upload fails.
             payload = {"text": tweet_text}
             response = twitter.post(url, json=payload)
             if response.status_code in [200, 201]:

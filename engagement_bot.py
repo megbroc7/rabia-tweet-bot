@@ -23,7 +23,7 @@ LOG_FILE = "engagement_log.csv"
 TIMEZONE = pytz.timezone("America/New_York")
 TWITTER_SEARCH_URL = "https://api.twitter.com/2/tweets/search/recent"
 TWITTER_POST_URL = "https://api.twitter.com/2/tweets"
-TWITTER_FAVORITE_URL = "https://api.twitter.com/1.1/favorites/create.json"
+# TWITTER_FAVORITE_URL = "https://api.twitter.com/1.1/favorites/create.json"  # Liking functionality disabled
 QUERY = (
     "#Spirituality OR #SelfLove OR #Healing OR #SpiritualAwakening OR #WomenEmpowerment OR "
     "#Inspiration OR #Consciousness OR #Mindfulness OR #EnergyHealing OR #Manifestation OR "
@@ -81,7 +81,7 @@ class TwitterBot:
             raise ValueError(f"Missing environment variables: {', '.join(missing)}")
 
     def _log_engagement(self, action: str, tweet_id: str, tweet_text: str, 
-                       reply_text: str, status: str, message: str):
+                        reply_text: str, status: str, message: str):
         try:
             file_exists = os.path.exists(LOG_FILE)
             timestamp = datetime.datetime.now(TIMEZONE).isoformat()
@@ -89,9 +89,9 @@ class TwitterBot:
                 writer = csv.writer(csvfile)
                 if not file_exists:
                     writer.writerow(["timestamp", "action", "tweet_id", "tweet_text", 
-                                   "reply_text", "status", "message"])
+                                     "reply_text", "status", "message"])
                 writer.writerow([timestamp, action, tweet_id, tweet_text, 
-                               reply_text, status, message])
+                                 reply_text, status, message])
         except Exception as e:
             logger.error(f"Failed to log engagement: {e}")
 
@@ -124,23 +124,24 @@ class TwitterBot:
             response.raise_for_status()
             logger.info(f"Replied to tweet {tweet_id}: {reply_text}")
             self._log_engagement("reply", tweet_id, tweet_text, reply_text, 
-                               "success", "Reply posted")
+                                 "success", "Reply posted")
         except Exception as e:
             logger.error(f"Error replying to tweet {tweet_id}: {e}")
             self._log_engagement("reply", tweet_id, tweet_text, reply_text, 
-                               "error", str(e))
+                                 "error", str(e))
 
-    def favorite_tweet(self, tweet_id: str, tweet_text: str):
-        try:
-            response = self.twitter.post(TWITTER_FAVORITE_URL, params={"id": tweet_id})
-            response.raise_for_status()
-            logger.info(f"Favorited tweet {tweet_id}")
-            self._log_engagement("favorite", tweet_id, tweet_text, "", 
-                               "success", "Tweet favorited")
-        except Exception as e:
-            logger.error(f"Error favoriting tweet {tweet_id}: {e}")
-            self._log_engagement("favorite", tweet_id, tweet_text, "", 
-                               "error", str(e))
+    # The favorite_tweet method is commented out because liking is disabled.
+    # def favorite_tweet(self, tweet_id: str, tweet_text: str):
+    #     try:
+    #         response = self.twitter.post(TWITTER_FAVORITE_URL, params={"id": tweet_id})
+    #         response.raise_for_status()
+    #         logger.info(f"Favorited tweet {tweet_id}")
+    #         self._log_engagement("favorite", tweet_id, tweet_text, "", 
+    #                              "success", "Tweet favorited")
+    #     except Exception as e:
+    #         logger.error(f"Error favoriting tweet {tweet_id}: {e}")
+    #         self._log_engagement("favorite", tweet_id, tweet_text, "", 
+    #                              "error", str(e))
 
     def run(self):
         tweets = self.search_tweets(QUERY, max_results=10)
@@ -156,7 +157,7 @@ class TwitterBot:
             tweet_text = tweet["text"]
             reply_text = self.generate_reply(tweet_text)
             self.post_reply(tweet_id, reply_text, tweet_text)
-            self.favorite_tweet(tweet_id, tweet_text)
+            # self.favorite_tweet(tweet_id, tweet_text)  # Liking is disabled
             time.sleep(5)  # Add delay between actions to spread load
 
 if __name__ == "__main__":
