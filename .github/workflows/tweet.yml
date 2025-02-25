@@ -21,11 +21,11 @@ jobs:
 
       - name: Download last_image_date artifact
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: last_image_date
           path: .
-        # This step downloads the file if it exists; if not, it won't fail.
-
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
